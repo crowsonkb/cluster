@@ -81,7 +81,7 @@ type simEntry struct {
 // sequence in which clusters were merged, i.e. each element of the result is a
 // [2]int.
 //
-// See: http://en.wikipedia.org/wiki/Hierarchical_clustering
+// See: http://en.wikipedia.org/wiki/Hierarchical_clustering.
 func Cluster(vecs []Vec) [][2]int {
 	sims := make([]simEntry, (len(vecs)-1)*len(vecs)/2)
 

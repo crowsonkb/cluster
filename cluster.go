@@ -61,7 +61,7 @@ func (a Vec) Dot(b Vec) (sum float64) {
 //   0: independent
 //   1: absolutely similar
 //
-// See http://en.wikipedia.org/wiki/Cosine_similarity
+// See http://en.wikipedia.org/wiki/Cosine_similarity.
 func (a Vec) Sim(b Vec) float64 {
 	if a.Length == 0 || b.Length == 0 {
 		return 0

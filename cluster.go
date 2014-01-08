@@ -56,7 +56,7 @@ func (a Vec) Dot(b Vec) (sum float64) {
 // Sim returns the cosine of the angle between two vectors, otherwise known as
 // cosine similarity. The result will be between -1 and 1 (0 and 1 if all
 // elements of the vector are nonnegative).
-// 
+//
 //  -1: absolutely opposed
 //   0: independent
 //   1: absolutely similar
@@ -74,15 +74,21 @@ type simEntry struct {
 	val  float64
 }
 
+// A Merge represents one level of a hierarchical clustering dendrogram.
+//
+// See: http://en.wikipedia.org/wiki/Dendrogram
+type Merge struct {
+	Left, Right int
+}
+
 // Cluster returns a hierarchical clustering of the input dataset. The input
 // dataset consists of a slice of term vectors which form the initial clusters.
 // Clusters are merged successively until there is only one left and the order
 // of the merges determines the dendrogram of the cluster. Cluster returns the
-// sequence in which clusters were merged, i.e. each element of the result is a
-// [2]int.
+// sequence in which clusters were merged.
 //
 // See: http://en.wikipedia.org/wiki/Hierarchical_clustering.
-func Cluster(vecs []Vec) [][2]int {
+func Cluster(vecs []Vec) []Merge {
 	sims := make([]simEntry, (len(vecs)-1)*len(vecs)/2)
 
 	queue := make(chan int, runtime.GOMAXPROCS(0))
@@ -110,10 +116,10 @@ func Cluster(vecs []Vec) [][2]int {
 	}
 	wg.Wait()
 
-	merges := make([][2]int, 0, len(vecs)-1)
+	merges := make([]Merge, 0, len(vecs)-1)
 
 	// In each round, the two most similar clusters are merged. The number of
-	// clusters decreases by 1 each round.	
+	// clusters decreases by 1 each round.
 	for round := 0; round < len(vecs)-1; round++ {
 		// Find the two most similar clusters.
 		maxsim := sims[0]
@@ -145,7 +151,7 @@ func Cluster(vecs []Vec) [][2]int {
 		wg.Wait()
 
 		sims = sims[:len(sims)-len(vecs)+round+1]
-		merges = append(merges, [2]int{maxsim.i, maxsim.j})
+		merges = append(merges, Merge{maxsim.i, maxsim.j})
 	}
 	close(queue)
 	return merges
@@ -153,23 +159,23 @@ func Cluster(vecs []Vec) [][2]int {
 
 // Interpret returns a list of significant clusters given the sequence of
 // merges returned by Cluster.
-func Interpret(merges [][2]int, count int) [][]int {
-	clusters := make([][]int, count)
+func Interpret(merges []Merge) [][]int {
+	clusters := make([][]int, len(merges)+1)
 	flagged := make([][]int, 0)
 	for i := range clusters {
 		clusters[i] = []int{i}
 	}
 	for _, merge := range merges {
-		if len(clusters[merge[0]]) > 3 && len(clusters[merge[1]]) > 3 {
-			if len(clusters[merge[0]]) < len(merges)/2 {
-				flagged = append(flagged, clusters[merge[0]])
+		if len(clusters[merge.Left]) > 3 && len(clusters[merge.Right]) > 3 {
+			if len(clusters[merge.Left]) < len(merges)/2 {
+				flagged = append(flagged, clusters[merge.Left])
 			}
-			if len(clusters[merge[1]]) < len(merges)/2 {
-				flagged = append(flagged, clusters[merge[1]])
+			if len(clusters[merge.Right]) < len(merges)/2 {
+				flagged = append(flagged, clusters[merge.Right])
 			}
 		}
-		clusters[merge[0]] = append(clusters[merge[0]],
-			clusters[merge[1]]...)
+		clusters[merge.Left] = append(clusters[merge.Left],
+			clusters[merge.Right]...)
 	}
 	return flagged
 }

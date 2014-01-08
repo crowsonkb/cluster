@@ -44,12 +44,14 @@ func ljGet(user string, direction uint8) []string {
 func init() {
 	flag.StringVar(&inituser, "user", "",
 		"The user whose friends data we will cluster")
-	flag.Parse()
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile)
-	runtime.GOMAXPROCS(runtime.NumCPU())
 }
 
 func main() {
+	flag.Parse()
+
+	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile)
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	if inituser == "" {
 		flag.Usage()
 		os.Exit(1)

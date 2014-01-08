@@ -18,17 +18,17 @@ var ljGetUrl = "http://www.livejournal.com/misc/fdata.bml?user="
 
 var inituser string
 
-func ljGet(user string, direction uint8) []string {
+func ljGet(user string, direction uint8) ([]string, error) {
 	body, err := ioutil.ReadFile(user)
 	if err != nil {
 		log.Printf("Retrieving data for: %s\n", user)
 		resp, err := http.Get(ljGetUrl + user)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		body, _ = ioutil.ReadAll(resp.Body)
 		if err = ioutil.WriteFile(user, body, 0644); err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 	}
 	result := make([]string, 0)
@@ -38,7 +38,10 @@ func ljGet(user string, direction uint8) []string {
 			result = append(result, (line[2:]))
 		}
 	}
-	return result
+	if len(result) == 0 {
+		return result, fmt.Errorf("invalid user, or no friends")
+	}
+	return result, nil
 }
 
 func init() {
@@ -66,14 +69,21 @@ func main() {
 		}
 	}
 
-	fdata := ljGet(inituser, '>')
+	fdata, err := ljGet(inituser, '>')
+	if err != nil {
+		log.Fatal(err)
+	}
 	names := make([]string, 0)
 	vecs := make([]cluster.Vec, 0)
 
 	for _, user := range fdata {
 		if user != inituser {
 			names = append(names, user)
-			vecs = append(vecs, cluster.NewVec(ljGet(user, '<')))
+			fdata, err = ljGet(user, '<')
+			if err != nil {
+				log.Fatal(err)
+			}
+			vecs = append(vecs, cluster.NewVec(fdata))
 		}
 	}
 	log.Println("Clustering...")

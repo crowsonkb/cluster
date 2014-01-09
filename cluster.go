@@ -76,7 +76,7 @@ type simEntry struct {
 
 // A Merge represents one level of a hierarchical clustering dendrogram.
 //
-// See: http://en.wikipedia.org/wiki/Dendrogram
+// See: http://en.wikipedia.org/wiki/Dendrogram.
 type Merge struct {
 	Left, Right int
 }
